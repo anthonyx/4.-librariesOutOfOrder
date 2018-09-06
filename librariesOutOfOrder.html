@@ -1,0 +1,144 @@
+<script src="./simpletest.js"></script>
+<script>
+
+
+// Task: Rewrite librarySystem so we can create libraries with dependencies out of order
+
+/* Requirements:
+    - It should return a library object given library name
+    - It should create a new library given library name and library callback
+    - It should create a new library given library name, library callback, and library dependencies
+    - It should not run the callback if the same library previously exists
+    - It should create new library even if library dependencies do not exist yet
+    - Libraries should only be accessible within the function, not globally
+*/
+
+(function() {
+    var libraryStorage = {};
+    var historicalCallbackArray = [];
+
+    function librarySystem(libraryName, libraryCallback, optionalLibraries) {
+        // Case 1: Returning library
+        if(arguments.length < 2) {
+            // If we are returning a library with dependencies that may/may not have existed at time of library creation:
+            if(libraryStorage[libraryName].dependencies !== undefined) {
+                var libraryCallbackArguments = [];
+                libraryStorage[libraryName].dependencies.forEach(function(element) {
+                    libraryCallbackArguments.push(librarySystem(element));
+                });
+
+                libraryStorage[libraryName] = libraryStorage[libraryName].callback.apply(null, libraryCallbackArguments);
+            }
+            
+            return libraryStorage[libraryName];    
+        // Adding libraries
+        } else {
+            // Do not add library if libraryName exists and libraryCallback has been used before
+                // 1. Create historicalCallback array
+                // 2. Check if libraryName previously exists
+                // 3. Check if libraryCallback function is equal to any functions in historicalCallback array
+            var wasCallbackUsed = Boolean(historicalCallbackArray.find(function(element) {
+                return element === Function.prototype.toString.apply(libraryCallback);
+            }));
+
+            // To test if callback function was run before and if library name previously existed
+            if(wasCallbackUsed && libraryStorage[libraryName] !== undefined) {
+                return;
+            } else {
+                // Store stringified callback function to prevent running it more than once
+                historicalCallbackArray.push(Function.prototype.toString.apply(libraryCallback));
+
+                // Case 2: Adding library with no dependencies
+                if(arguments.length === 2) {
+                    libraryStorage[libraryName] = libraryCallback();
+                // Case 3: Adding library with dependencies
+                } else if(arguments.length > 2 && Array.isArray(optionalLibraries)) {
+                    libraryStorage[libraryName] = {};
+                    libraryStorage[libraryName].dependencies = optionalLibraries;
+                    libraryStorage[libraryName].callback = libraryCallback;
+                } 
+            }
+        }
+    }
+
+    window.librarySystem = librarySystem;
+})();
+
+
+// Tests
+tests({
+    'It should store a library given library name and library callback.': function() {
+        // How do I access libraryStorage to confirm it has been stored?
+        // libraryStorage can only be accessed using librarySystem
+        // If accessing using librarySystem, then this test and the next test would be dependent on each other
+        function newLibraryCallback() {
+            return 'newLibrary';
+        }
+
+        librarySystem('library', newLibraryCallback);
+
+        eq(librarySystem('library'), 'newLibrary');
+    },
+    'It should return a library object given an existing library name.': function() {
+        function newLibraryCallback() {
+            return 'newLibrary';
+        }
+
+        librarySystem('library', newLibraryCallback);
+
+        eq(librarySystem('library'), 'newLibrary');
+    },
+    'It should store a library given library name, library callback, and library dependencies.': function() {
+        function firstLibraryCallback() {
+            return 'Anthony';
+        }
+        // Create first library
+        librarySystem('firstLibrary', firstLibraryCallback);
+
+        function secondLibraryCallback(firstLibrary) {
+            return 'My name is ' + firstLibrary;
+        }
+        // Create second library using first library
+        librarySystem('secondLibrary', secondLibraryCallback, ['firstLibrary']);
+
+        eq(librarySystem('secondLibrary'), 'My name is Anthony');
+    },
+    'If library exists, it should not run the library callback again.': function() {
+        // 2 requirements for not running the callback again:
+            // 1. library name previously exists
+            // 2. library value is equal to callback return value
+                // Issue with this is that we need to run callback everytime to compare the values
+                // But what if it is an object? Then we cannot compare since it is based on memory addresses
+                // Compare the functions themselves? 
+                    // Unless the parameters passed into the function are different
+                    // Then we need to store the function as well
+
+        var counter = 0;
+        function counterLibraryCallback() {
+            counter++;
+            return '';
+        }
+
+        librarySystem('counterLibrary', counterLibraryCallback);
+        librarySystem('counterLibrary', counterLibraryCallback);
+
+        eq(counter, 1);
+    },
+    'It should properly return a library stored with library dependencies that did not exist when library was created.': function() {
+        librarySystem('workBlurb', function(name, company) {
+          return name + ' works at ' + company;
+        }, ['name', 'company']);
+
+        librarySystem('name', function() {
+          return 'Gordon';
+        }, []);
+
+        librarySystem('company', function() {
+          return 'Watch and Code';
+        }, []);
+
+        eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code'); // 'Gordon works at Watch and Code'
+    }
+});
+
+</script>
