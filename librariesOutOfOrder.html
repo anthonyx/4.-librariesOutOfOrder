@@ -8,9 +8,8 @@
     - It should return a library object given library name
     - It should create a new library given library name and library callback
     - It should create a new library given library name, library callback, and library dependencies
-    - It should not run the callback if the same library previously exists
-    - It should create new library even if library dependencies do not exist yet
-    - Libraries should only be accessible within the function, not globally
+    - It should not run the callback again if the same library previously exists
+    - It should return a library even if library dependencies do not exist at the time of library storage
 */
 
 (function() {
@@ -56,7 +55,7 @@ tests({
     'It should store a library given library name and library callback.': function() {
         // How do I access libraryStorage to confirm it has been stored?
         // libraryStorage can only be accessed using librarySystem
-        // If accessing using librarySystem, then this test and the next test would be dependent on each other
+        // If accessing using librarySystem, then this test and the next test are dependent on each other
         function newLibraryCallback() {
             return 'newLibrary';
         }
@@ -74,7 +73,7 @@ tests({
 
         eq(librarySystem('library'), 'newLibrary');
     },
-    'It should store a library given library name, library callback, and library dependencies.': function() {
+    'It should store and return a library given library name, library callback, and library dependencies.': function() {
         function firstLibraryCallback() {
             return 'Anthony';
         }
@@ -89,27 +88,23 @@ tests({
 
         eq(librarySystem('secondLibrary'), 'My name is Anthony');
     },
-    'If library exists, it should not run the library callback again.': function() {
-        // 2 requirements for not running the callback again:
-            // 1. library name previously exists
-            // 2. library value is equal to callback return value
-                // Issue with this is that we need to run callback everytime to compare the values
-                // But what if it is an object? Then we cannot compare since it is based on memory addresses
-                // Compare the functions themselves? 
-                    // Unless the parameters passed into the function are different
-                    // Then we need to store the function as well
-
+    'It should not run the library callback more than once.': function() {
         var counter = 0;
+
         function counterLibraryCallback() {
             counter++;
             return '';
         }
 
+        // Create library twice
         librarySystem('counterLibrary', counterLibraryCallback);
         librarySystem('counterLibrary', counterLibraryCallback);
+
+        // Return library twice
         librarySystem('counterLibrary');
         librarySystem('counterLibrary');
 
+        // counter should still equal 1
         eq(counter, 1);
     },
     'It should properly return a library stored with library dependencies that did not exist when library was created.': function() {
