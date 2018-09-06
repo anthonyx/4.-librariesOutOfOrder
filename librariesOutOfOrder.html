@@ -27,9 +27,11 @@
             };
         // Feature 2: Return library
         } else {
-            // If library does not exist and dependencies is an array, create library
+            // If library does not exist, create library
             if(libraryStorage[libraryName].library === null) {
-                if(Boolean(Array.isArray(libraryStorage[libraryName].dependencies)) === false) {
+                // Check whether dependencies property is an array 
+                // If not, set it to empty array
+                if(Array.isArray(libraryStorage[libraryName].dependencies) === false) {
                     libraryStorage[libraryName].dependencies = [];
                 }
                 // Create libraryCallbackArguments by running librarySystem on each element in dependencies array
