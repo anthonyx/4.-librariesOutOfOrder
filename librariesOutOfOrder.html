@@ -15,49 +15,33 @@
 
 (function() {
     var libraryStorage = {};
-    var historicalCallbackArray = [];
 
-    function librarySystem(libraryName, libraryCallback, optionalLibraries) {
-        // Case 1: Returning library
-        if(arguments.length < 2) {
-            // If we are returning a library with dependencies that may/may not have existed at time of library creation:
-            if(libraryStorage[libraryName].dependencies !== undefined) {
-                var libraryCallbackArguments = [];
-                libraryStorage[libraryName].dependencies.forEach(function(element) {
-                    libraryCallbackArguments.push(librarySystem(element));
+    function librarySystem(libraryName, libraryCallback, dependencies) {
+        // Feature 1: Store library
+        if(arguments.length > 1) {
+            libraryStorage[libraryName] = {
+                libraryCallback: libraryCallback,
+                dependencies: dependencies,
+                // By default, we will set the library to null until we want to return the library
+                library: null
+            };
+        // Feature 2: Return library
+        } else {
+            // If library does not exist and dependencies is an array, create library
+            if(libraryStorage[libraryName].library === null) {
+                if(Boolean(Array.isArray(libraryStorage[libraryName].dependencies)) === false) {
+                    libraryStorage[libraryName].dependencies = [];
+                }
+                // Create libraryCallbackArguments by running librarySystem on each element in dependencies array
+                libraryCallbackArguments = libraryStorage[libraryName].dependencies.map(function(element) {
+                    return librarySystem(element);
                 });
 
-                libraryStorage[libraryName] = libraryStorage[libraryName].callback.apply(null, libraryCallbackArguments);
+                // Set library equal to return value of libraryCallback applied with libraryCallbackArguments
+                libraryStorage[libraryName].library = libraryStorage[libraryName].libraryCallback.apply(null, libraryCallbackArguments);
             }
-            
-            return libraryStorage[libraryName];    
-        // Adding libraries
-        } else {
-            // Do not add library if libraryName exists and libraryCallback has been used before
-                // 1. Create historicalCallback array
-                // 2. Check if libraryName previously exists
-                // 3. Check if libraryCallback function is equal to any functions in historicalCallback array
-            var wasCallbackUsed = Boolean(historicalCallbackArray.find(function(element) {
-                return element === Function.prototype.toString.apply(libraryCallback);
-            }));
 
-            // To test if callback function was run before and if library name previously existed
-            if(wasCallbackUsed && libraryStorage[libraryName] !== undefined) {
-                return;
-            } else {
-                // Store stringified callback function to prevent running it more than once
-                historicalCallbackArray.push(Function.prototype.toString.apply(libraryCallback));
-
-                // Case 2: Adding library with no dependencies
-                if(arguments.length === 2) {
-                    libraryStorage[libraryName] = libraryCallback();
-                // Case 3: Adding library with dependencies
-                } else if(arguments.length > 2 && Array.isArray(optionalLibraries)) {
-                    libraryStorage[libraryName] = {};
-                    libraryStorage[libraryName].dependencies = optionalLibraries;
-                    libraryStorage[libraryName].callback = libraryCallback;
-                } 
-            }
+            return libraryStorage[libraryName].library;
         }
     }
 
@@ -121,6 +105,8 @@ tests({
 
         librarySystem('counterLibrary', counterLibraryCallback);
         librarySystem('counterLibrary', counterLibraryCallback);
+        librarySystem('counterLibrary');
+        librarySystem('counterLibrary');
 
         eq(counter, 1);
     },
@@ -137,7 +123,7 @@ tests({
           return 'Watch and Code';
         }, []);
 
-        eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code'); // 'Gordon works at Watch and Code'
+        eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
     }
 });
 
