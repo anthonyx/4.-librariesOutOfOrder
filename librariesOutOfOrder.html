@@ -52,10 +52,7 @@
 
 // Tests
 tests({
-    'It should store a library given library name and library callback.': function() {
-        // How do I access libraryStorage to confirm it has been stored?
-        // libraryStorage can only be accessed using librarySystem
-        // If accessing using librarySystem, then this test and the next test are dependent on each other
+    'It should store and return a library given a library name and library callback.': function() {
         function newLibraryCallback() {
             return 'newLibrary';
         }
@@ -64,16 +61,7 @@ tests({
 
         eq(librarySystem('library'), 'newLibrary');
     },
-    'It should return a library object given an existing library name.': function() {
-        function newLibraryCallback() {
-            return 'newLibrary';
-        }
-
-        librarySystem('library', newLibraryCallback);
-
-        eq(librarySystem('library'), 'newLibrary');
-    },
-    'It should store and return a library given library name, library callback, and library dependencies.': function() {
+    'It should store and return a library given library name, library callback, and a library dependencies array.': function() {
         function firstLibraryCallback() {
             return 'Anthony';
         }
@@ -121,6 +109,21 @@ tests({
         }, []);
 
         eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+    },
+    'It should update the library if the value of dependencies has changed.': function() {
+        librarySystem('workBlurb', function(name, company) {
+          return name + ' works at ' + company;
+        }, ['name', 'company']);
+
+        librarySystem('name', function() {
+          return 'Jake';
+        });
+
+        librarySystem('company', function() {
+          return 'Google';
+        });
+        
+        eq(librarySystem('workBlurb'),'Jake works at Google');
     }
 });
 

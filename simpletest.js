@@ -65,11 +65,11 @@ var TinyTest = {
             try {
                 testAction.apply(this); // apply: will bind this to testAction and then run it
                 // This will print out if no error is thrown.
-                console.log('%c' + testName + '. OK', "color: green;");
+                console.log('%c' + testName + ' OK', "color: green;");
                 //console.log("%cMy stylish message", "color: green;");
             } catch (e) {
                 failures++;
-                console.groupCollapsed('%c' + testName + '. FAILED', "color: red;");
+                console.groupCollapsed('%c' + testName + ' FAILED', "color: red;");
                 console.error(e.stack);
                 console.groupEnd(); 
             }
